@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'finance_app:customer_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新增客户
+        </a>
+    </div>
+    
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>客户ID</th>
+                            <th>客户名称</th>
+                            <th>信用额度</th>
+                            <th>应收账款</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td>{{ customer.customer_id }}</td>
+                            <td>{{ customer.customer_name }}</td>
+                            <td>{{ customer.credit_limit }}</td>
+                            <td>{{ customer.current_receivable }}</td>
+                            <td>
+                                {% if customer.status == 'ACTIVE' %}
+                                <span class="badge bg-success">启用</span>
+                                {% else %}
+                                <span class="badge bg-secondary">停用</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+    <!-- 使用 with 语句检查 customer_id -->
+    {% with id=customer.customer_id %}
+        {% if id and id|length > 0 %}
+            <!-- 只有当 customer_id 非空时才生成链接 -->
+            <a href="{% url 'finance_app:customer_detail' id %}"
+               class="btn btn-sm btn-info">查看</a>
+            <a href="{% url 'finance_app:customer_edit' id %}"
+               class="btn btn-sm btn-warning">编辑</a>
+            <form method="post" action="{% url 'finance_app:customer_toggle_status' id %}"
+                  class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm {% if customer.status == 'ACTIVE' %}btn-danger{% else %}btn-success{% endif %}">
+                    {% if customer.status == 'ACTIVE' %}停用{% else %}启用{% endif %}
+                </button>
+            </form>
+        {% else %}
+            <!-- 显示为禁用状态 -->
+            <button class="btn btn-sm btn-secondary" disabled>查看</button>
+            <button class="btn btn-sm btn-secondary" disabled>编辑</button>
+            <button class="btn btn-sm btn-secondary" disabled>状态</button>
+            <!-- 调试信息（可选） -->
+            <small class="text-danger">客户ID无效</small>
+        {% endif %}
+    {% endwith %}
+</div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                暂无客户记录
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

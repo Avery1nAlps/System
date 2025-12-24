@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>财务系统 - 首页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        /* 顶部导航栏 */
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: normal;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logout-btn {
+            color: white;
+            text-decoration: none;
+            padding: 6px 15px;
+            background-color: #e74c3c;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* 主体内容区 */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        /* 用户信息卡片 */
+        .info-card {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        .info-card h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .info-list {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-label {
+            color: #7f8c8d;
+        }
+        .info-value {
+            font-weight: 500;
+        }
+
+        /* 功能入口区 */
+        .function-area {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .function-area h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .function-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .function-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+        .function-card:hover {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .function-card i {
+            font-size: 40px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        .function-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .function-card p {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
+        /* 适配小屏幕 */
+        @media (max-width: 768px) {
+            .function-cards {
+                grid-template-columns: 1fr;
+            }
+            .info-list {
+                gap: 20px;
+            }
+        }
+
+        /* 新添加：功能卡片状态样式 */
+        .coming-soon {
+            opacity: 0.7;
+            position: relative;
+        }
+        .coming-soon::after {
+            content: "开发中";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f39c12;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .admin-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .admin-link i, .admin-link h3, .admin-link p {
+            color: white !important;
+        }
+
+        /* 新增：无权限提示 */
+        .no-permission-hint {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+        .no-permission-hint i {
+            font-size: 48px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        /* 新增：三列布局 */
+        .function-cards.three-columns {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        @media (max-width: 992px) {
+            .function-cards.three-columns {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 576px) {
+            .function-cards.three-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 新增：特殊颜色卡片 */
+        .purchase-link {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .sales-link {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .purchase-link i, .purchase-link h3, .purchase-link p,
+        .sales-link i, .sales-link h3, .sales-link p {
+            color: white !important;
+        }
+    </style>
+    <!-- 引入图标库（让功能入口有图标，更直观） -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="header">
+        <h1>企业财务综合管理系统</h1>
+        <div class="user-info">
+            <span>欢迎您，{{ username }}</span>
+            <a href="{% url 'users:logout' %}" class="logout-btn">退出登录</a>
+        </div>
+    </div>
+
+    <!-- 主体内容 -->
+    <div class="container">
+        <!-- 用户信息卡片 -->
+        <div class="info-card">
+            <h2>用户信息</h2>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label">用户名：</span>
+                    <span class="info-value">{{ username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">所属角色：</span>
+                    <span class="info-value">{{ role }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">所属部门：</span>
+                    <span class="info-value">{{ department }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">员工编号：</span>
+                    <span class="info-value">{{ employee_id }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能入口 -->
+        <div class="function-area">
+            <h2>核心功能</h2>
+            <div class="function-cards three-columns">
+                {% if user.is_authenticated %}
+                    {% with role_code=user.profile.role.role_code %}
+
+                    <!-- 凭证管理 -->
+                    {% if user.username == 'admin' or role_code in "GENERAL_ACCOUNTANT,PURCHASE_ACCOUNTANT,SALES_ACCOUNTANT,ACCOUNTANT_SUPERVISOR,CASHIER" %}
+                    <a href="{% url 'finance_app:voucher_list' %}" class="function-card">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <h3>凭证管理</h3>
+                        <p>录入、查看、编辑会计凭证，支持实时借贷平衡检查</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 采购订单管理 -->
+                    {% if user.username == 'admin' or role_code in "PURCHASE_ACCOUNTANT,ACCOUNTANT_SUPERVISOR" %}
+                    <a href="{% url 'finance_app:purchase_order_list' %}" class="function-card purchase-link">
+                        <i class="fa-solid fa-shopping-cart"></i>
+                        <h3>采购订单</h3>
+                        <p>管理采购订单，跟踪采购流程，维护供应商关系</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 销售订单管理 -->
+                    {% if user.username == 'admin' or role_code in "SALES_ACCOUNTANT,ACCOUNTANT_SUPERVISOR" %}
+                    <a href="{% url 'finance_app:sales_order_list' %}" class="function-card sales-link">
+                        <i class="fa-solid fa-store"></i>
+                        <h3>销售订单</h3>
+                        <p>管理销售订单，跟踪销售流程，维护客户关系</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 供应商管理 -->
+                    {% if user.username == 'admin' or role_code in "PURCHASE_ACCOUNTANT,ACCOUNTANT_SUPERVISOR" %}
+                    <a href="{% url 'finance_app:supplier_list' %}" class="function-card">
+                        <i class="fa-solid fa-people-arrows"></i>
+                        <h3>供应商管理</h3>
+                        <p>维护供应商基本信息，管理付款条件和银行账户</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 客户管理 -->
+                    {% if user.username == 'admin' or role_code in "SALES_ACCOUNTANT,ACCOUNTANT_SUPERVISOR" %}
+                    <a href="{% url 'finance_app:customer_list' %}" class="function-card">
+                        <i class="fas fa-user-tie"></i>
+                        <h3>客户管理</h3>
+                        <p>维护客户信息，管理信用额度和应收账款</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 财务报表 -->
+                    {% if user.username == 'admin' or role_code in "GENERAL_ACCOUNTANT,PURCHASE_ACCOUNTANT,SALES_ACCOUNTANT,ACCOUNTANT_SUPERVISOR,CASHIER" %}
+                    <a href="{% url 'finance_app:report_home' %}" class="function-card">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <h3>财务报表</h3>
+                        <p>生成资产负债表、利润表等标准财务报表</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 系统管理 - 只有admin能看到 -->
+                    {% if user.username == 'admin' %}
+                    <a href="/admin/" class="function-card admin-link">
+                        <i class="fa-solid fa-cog"></i>
+                        <h3>系统管理</h3>
+                        <p>角色/用户权限配置，基础数据管理</p>
+                    </a>
+                    {% endif %}
+
+                    <!-- 如果没有任何会计权限，显示提示 -->
+                    {% if not user.username == 'admin' and role_code not in "GENERAL_ACCOUNTANT,PURCHASE_ACCOUNTANT,SALES_ACCOUNTANT,ACCOUNTANT_SUPERVISOR,CASHIER" %}
+                    <div class="no-permission-hint">
+                        <i class="fas fa-lock"></i>
+                        <h3>暂无可用功能</h3>
+                        <p>您的角色（{{ role }}）目前没有分配会计系统功能权限</p>
+                        <p>如需使用相关功能，请联系系统管理员</p>
+                    </div>
+                    {% endif %}
+
+                    {% endwith %}
+                {% else %}
+                    <!-- 未登录状态 -->
+                    <div class="no-permission-hint">
+                        <i class="fas fa-user-lock"></i>
+                        <h3>请先登录系统</h3>
+                        <p>登录后可根据您的角色权限使用相应功能</p>
+                        <a href="{% url 'users:login' %}" class="btn btn-primary mt-3">前往登录</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加简单的权限检查提示
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否有采购权限
+            const purchasePermission = "{{ user.profile.role.role_code }}" === "PURCHASE_ACCOUNTANT" ||
+                                       "{{ user.profile.role.role_code }}" === "ACCOUNTANT_SUPERVISOR" ||
+                                       "{{ user.username }}" === "admin";
+
+            // 检查是否有销售权限
+            const salesPermission = "{{ user.profile.role.role_code }}" === "SALES_ACCOUNTANT" ||
+                                    "{{ user.profile.role.role_code }}" === "ACCOUNTANT_SUPERVISOR" ||
+                                    "{{ user.username }}" === "admin";
+
+            // 如果没有相应权限，可以在这里添加提示（如果需要的话）
+            console.log('采购权限:', purchasePermission);
+            console.log('销售权限:', salesPermission);
+        });
+    </script>
+</body>
+</html>

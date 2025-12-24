@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 页面标题和操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-balance-scale me-2"></i>{{ title }}</h2>
+            <p class="text-muted">{{ sheet.period }} - {{ sheet.report_date|date:"Y年m月d日 H:i" }}生成</p>
+        </div>
+        <div>
+            <a href="{% url 'finance_app:balance_sheet_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>返回列表
+            </a>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-1"></i>导出
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel text-success me-2"></i>Excel格式</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf text-danger me-2"></i>PDF格式</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-print text-primary me-2"></i>打印预览</a></li>
+                </ul>
+                {% if not sheet.is_final %}
+                <a href="#" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i>编辑
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 平衡状态警告 -->
+    {% if not sheet.is_balanced %}
+    <div class="alert alert-danger mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">资产负债表不平衡！</h5>
+                <p class="mb-0">
+                    资产总计 (¥{{ sheet.total_assets|floatformat:2 }}) ≠ 
+                    负债和所有者权益总计 (¥{{ sheet.total_liabilities|add:sheet.total_equity|floatformat:2 }})
+                    <br>
+                    <strong>差额：¥{{ sheet.balance_diff|floatformat:2 }}</strong>
+                </p>
+            </div>
+            <div class="ms-auto">
+                <button type="button" class="btn btn-outline-danger">立即调整</button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-success mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-check-circle fa-2x me-3"></i>
+            <div>
+                <h5 class="alert-heading mb-1">资产负债表平衡 ✓</h5>
+                <p class="mb-0">
+                    资产总计 (¥{{ sheet.total_assets|floatformat:2 }}) = 
+                    负债和所有者权益总计 (¥{{ sheet.total_liabilities|add:sheet.total_equity|floatformat:2 }})
+                </p>
+            </div>
+            {% if not sheet.is_final %}
+            <div class="ms-auto">
+                <button type="button" class="btn btn-success">标记为定稿</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 资产负债表主要内容 -->
+    <div class="row">
+        <!-- 左侧：资产 -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-wallet me-2"></i>资产</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="70%">项目</th>
+                                <th class="text-end">金额</th>
+                                <th class="text-end">占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>流动资产</strong>
+                                    <small class="text-muted d-block">现金、应收账款、存货等</small>
+                                </td>
+                                <td class="text-end">¥{{ sheet.current_assets|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.current_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>固定资产</strong>
+                                    <small class="text-muted d-block">房屋、设备、车辆等</small>
+                                </td>
+                                <td class="text-end">¥{{ sheet.fixed_assets|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.fixed_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>无形资产</strong>
+                                    <small class="text-muted d-block">专利、商标、软件等</small>
+                                </td>
+                                <td class="text-end">¥{{ sheet.intangible_assets|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.intangible_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>其他资产</strong>
+                                    <small class="text-muted d-block">预付款、长期投资等</small>
+                                </td>
+                                <td class="text-end">¥{{ sheet.other_assets|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.other_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-success">
+                            <tr>
+                                <td><strong>资产总计</strong></td>
+                                <td class="text-end"><strong>¥{{ sheet.total_assets|floatformat:2 }}</strong></td>
+                                <td class="text-end"><strong>100%</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：负债和所有者权益 -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>负债和所有者权益</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="70%">项目</th>
+                                <th class="text-end">金额</th>
+                                <th class="text-end">占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>流动负债</strong>
+                                    <small class="text-muted d-block">应付账款、短期借款等</small>
+                                </td>
+                                <td class="text-end text-danger">¥{{ sheet.current_liabilities|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.current_liabilities_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>长期负债</strong>
+                                    <small class="text-muted d-block">长期借款、债券等</small>
+                                </td>
+                                <td class="text-end text-danger">¥{{ sheet.long_term_liabilities|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.long_term_liabilities_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr class="table-info">
+                                <td colspan="3" class="bg-light">
+                                    <strong>所有者权益</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>实收资本</strong>
+                                    <small class="text-muted d-block">股东投入的资本</small>
+                                </td>
+                                <td class="text-end text-success">¥{{ sheet.paid_in_capital|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.paid_in_capital_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>留存收益</strong>
+                                    <small class="text-muted d-block">历年累积的利润</small>
+                                </td>
+                                <td class="text-end text-success">¥{{ sheet.retained_earnings|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.retained_earnings_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>本期利润</strong>
+                                    <small class="text-muted d-block">本期实现的净利润</small>
+                                </td>
+                                <td class="text-end text-success">¥{{ sheet.current_profit|floatformat:2 }}</td>
+                                <td class="text-end">
+                                    <span class="badge bg-light text-dark">
+                                        {{ sheet.current_profit_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-warning">
+                            <tr>
+                                <td><strong>负债和所有者权益总计</strong></td>
+                                <td class="text-end"><strong>¥{{ sheet.total_liabilities|add:sheet.total_equity|floatformat:2 }}</strong></td>
+                                <td class="text-end"><strong>100%</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表和分析 -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>资产结构分析</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <canvas id="assetChart" width="300" height="300"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>资产构成分析：</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    流动资产占比
+                                    <span class="badge bg-success rounded-pill">
+                                        {{ sheet.current_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    固定资产占比
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ sheet.fixed_assets_rate|floatformat:1 }}%
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    资产负债率
+                                    <span class="badge bg-warning rounded-pill">
+                                        {{ sheet.total_liabilities_rate|floatformat:1 }}%
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    权益比率
+                                    <span class="badge bg-info rounded-pill">
+                                        {{ sheet.total_equity_rate|floatformat:1 }}%
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>报表信息</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">会计期间：</dt>
+                        <dd class="col-sm-6">{{ sheet.period }}</dd>
+                        
+                        <dt class="col-sm-6">生成时间：</dt>
+                        <dd class="col-sm-6">{{ sheet.report_date|date:"Y-m-d H:i" }}</dd>
+                        
+                        <dt class="col-sm-6">生成人：</dt>
+                        <dd class="col-sm-6">{{ sheet.generated_by.username }}</dd>
+                        
+                        <dt class="col-sm-6">状态：</dt>
+                        <dd class="col-sm-6">
+                            {% if sheet.is_final %}
+                            <span class="badge bg-success">已定稿</span>
+                            {% else %}
+                            <span class="badge bg-warning">草稿</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-6">平衡状态：</dt>
+                        <dd class="col-sm-6">
+                            {% if sheet.is_balanced %}
+                            <span class="badge bg-success">平衡 ✓</span>
+                            {% else %}
+                            <span class="badge bg-danger">不平衡</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>快速操作</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'finance_app:income_statement_detail' period=sheet.period %}" 
+                           class="btn btn-outline-warning">
+                            <i class="fas fa-chart-bar me-2"></i>查看同期利润表
+                        </a>
+                        <button type="button" class="btn btn-outline-primary">
+                            <i class="fas fa-exchange-alt me-2"></i>对比上月数据
+                        </button>
+                        <button type="button" class="btn btn-outline-info">
+                            <i class="fas fa-history me-2"></i>查看历史版本
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<!-- 引入 Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // 资产结构饼图
+    const ctx = document.getElementById('assetChart').getContext('2d');
+    const assetChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['流动资产', '固定资产', '无形资产', '其他资产'],
+            datasets: [{
+                data: [
+                    {{ sheet.current_assets|default:0 }},
+                    {{ sheet.fixed_assets|default:0 }},
+                    {{ sheet.intangible_assets|default:0 }},
+                    {{ sheet.other_assets|default:0 }}
+                ],
+                backgroundColor: [
+                    '#28a745', // 绿
+                    '#007bff', // 蓝
+                    '#6f42c1', // 紫
+                    '#fd7e14'  // 橙
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            label += '¥' + value.toLocaleString() + ' (' + percentage + '%)';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // 打印功能
+    $('.btn-print').click(function() {
+        window.print();
+    });
+    
+    // 导出功能
+    $('.export-excel').click(function() {
+        alert('Excel导出功能正在开发中...');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

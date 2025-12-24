@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'finance_app:supplier_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新增供应商
+        </a>
+    </div>
+    
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>供应商ID</th>
+                            <th>供应商名称</th>
+                            <th>付款条件</th>
+                            <th>银行账号</th>
+                            <th>应付账款</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td>{{ supplier.supplier_id }}</td>
+                            <td>{{ supplier.supplier_name }}</td>
+                            <td>{{ supplier.payment_terms|default:"-" }}</td>
+                            <td>{{ supplier.bank_account|default:"-" }}</td>
+                            <td>{{ supplier.current_payable }}</td>
+                            <td>
+                                {% if supplier.status == 'ACTIVE' %}
+                                <span class="badge bg-success">启用</span>
+                                {% else %}
+                                <span class="badge bg-secondary">停用</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'finance_app:supplier_detail' supplier.supplier_id %}" 
+                                       class="btn btn-sm btn-info">查看</a>
+                                    <a href="{% url 'finance_app:supplier_edit' supplier.supplier_id %}" 
+                                       class="btn btn-sm btn-warning">编辑</a>
+                                    <form method="post" action="{% url 'finance_app:supplier_toggle_status' supplier.supplier_id %}" 
+                                          class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm {% if supplier.status == 'ACTIVE' %}btn-danger{% else %}btn-success{% endif %}">
+                                            {% if supplier.status == 'ACTIVE' %}停用{% else %}启用{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                暂无供应商记录
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

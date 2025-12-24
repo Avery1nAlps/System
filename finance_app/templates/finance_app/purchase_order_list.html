@@ -1,0 +1,121 @@
+<!-- finance_app/templates/finance_app/purchase_order_list.html -->
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-shopping-cart text-primary me-2"></i>
+            {{ title }}
+        </h2>
+        <div>
+            <a href="{% url 'finance_app:purchase_order_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>新建采购订单
+            </a>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">订单总数</h5>
+                    <h3 class="text-primary">{{ total_orders }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">订单总额</h5>
+                    <h3 class="text-success">¥{{ total_amount|intcomma }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">待处理订单</h5>
+                    <h3 class="text-warning">{{ pending_orders }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单列表 -->
+    <div class="card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">采购订单列表</h5>
+            <div class="btn-group">
+                <a href="?status=DRAFT" class="btn btn-sm btn-outline-secondary">草稿</a>
+                <a href="?status=SUBMITTED" class="btn btn-sm btn-outline-secondary">已提交</a>
+                <a href="?status=APPROVED" class="btn btn-sm btn-outline-secondary">已审核</a>
+                <a href="?" class="btn btn-sm btn-outline-secondary">全部</a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>订单编号</th>
+                            <th>供应商</th>
+                            <th>商品名称</th>
+                            <th>数量</th>
+                            <th>单价</th>
+                            <th>总额</th>
+                            <th>状态</th>
+                            <th>订单日期</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'finance_app:purchase_order_detail' order.id %}">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td>{{ order.supplier.supplier_name }}</td>
+                            <td>{{ order.product_name }}</td>
+                            <td>{{ order.quantity }}</td>
+                            <td>¥{{ order.unit_price|intcomma }}</td>
+                            <td>
+                                <strong class="text-success">¥{{ order.total_amount|intcomma }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if order.status == 'DRAFT' %}secondary
+                                                    {% elif order.status == 'SUBMITTED' %}warning
+                                                    {% elif order.status == 'APPROVED' %}primary
+                                                    {% elif order.status == 'RECEIVED' %}success
+                                                    {% else %}danger{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ order.order_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <a href="{% url 'finance_app:purchase_order_detail' order.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    查看
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">暂无采购订单</h5>
+                <p class="text-muted mb-4">点击上方按钮创建第一个采购订单</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

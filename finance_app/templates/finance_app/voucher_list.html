@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ title }}</h2>
+        <a href="{% url 'finance_app:voucher_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新建凭证
+        </a>
+    </div>
+    
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>凭证编号</th>
+                            <th>日期</th>
+                            <th>摘要</th>
+                            <th>借方总额</th>
+                            <th>贷方总额</th>
+                            <th>状态</th>
+                            <th>制单人</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for voucher in vouchers %}
+                        <tr>
+                            <td>{{ voucher.voucher_id }}</td>
+                            <td>{{ voucher.voucher_date }}</td>
+                            <td>{{ voucher.description|truncatechars:30 }}</td>
+                            <td class="text-danger">{{ voucher.total_debit }}</td>
+                            <td class="text-primary">{{ voucher.total_credit }}</td>
+                            <td>
+                                {% if voucher.status == 'DRAFT' %}
+                                <span class="badge badge-secondary">草稿</span>
+                                {% elif voucher.status == 'SUBMITTED' %}
+                                <span class="badge badge-warning">已提交</span>
+                                {% elif voucher.status == 'AUDITED' %}
+                                <span class="badge badge-success">已审核</span>
+                                {% elif voucher.status == 'POSTED' %}
+                                <span class="badge badge-info">已过账</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ voucher.created_by.username }}</td>
+                            <td>
+                                <a href="{% url 'finance_app:voucher_detail' voucher.voucher_id %}" 
+                                   class="btn btn-sm btn-info">
+                                    查看
+                                </a>
+                                {% if voucher.status == 'DRAFT' %}
+                                <a href="{% url 'finance_app:voucher_edit' voucher.voucher_id %}" 
+                                   class="btn btn-sm btn-warning">
+                                    编辑
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                暂无凭证记录
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header {% if customer %}bg-warning{% else %}bg-primary{% endif %} text-white">
+            <h4 class="mb-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- 显示非字段错误 -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label>客户ID</label>
+                            {{ form.customer_id }}
+                            {% if form.customer_id.errors %}
+                            <div class="text-danger">{{ form.customer_id.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label>客户名称</label>
+                            {{ form.customer_name }}
+                            {% if form.customer_name.errors %}
+                            <div class="text-danger">{{ form.customer_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label>信用额度</label>
+                            {{ form.credit_limit }}
+                            {% if form.credit_limit.errors %}
+                            <div class="text-danger">{{ form.credit_limit.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label>当前应收账款</label>
+                            {{ form.current_receivable }}
+                            {% if form.current_receivable.errors %}
+                            <div class="text-danger">{{ form.current_receivable.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>联系信息</label>
+                    {{ form.contact_info }}
+                    <small class="form-text text-muted">请输入联系电话、地址、联系人等信息（每行一项）</small>
+                    {% if form.contact_info.errors %}
+                    <div class="text-danger">{{ form.contact_info.errors }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'finance_app:customer_list' %}" class="btn btn-secondary">
+                        取消
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

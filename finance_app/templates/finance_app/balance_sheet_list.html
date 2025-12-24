@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 页面标题和操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-balance-scale me-2"></i>{{ title }}</h2>
+            <p class="text-muted">显示所有已生成的资产负债表</p>
+        </div>
+        <div>
+            <a href="{% url 'finance_app:report_home' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>返回报表主页
+            </a>
+            <a href="{% url 'finance_app:balance_sheet_generate' %}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>生成新报表
+            </a>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">报表总数</h6>
+                            <h3 class="mb-0">{{ sheets|length }}</h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-file-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">平衡报表</h6>
+                            <h3 class="mb-0">{{ sheets|length|add:"0" }}</h3>
+                            <small>资产 = 负债 + 权益</small>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">最近期间</h6>
+                            <h3 class="mb-0">
+                                {% if sheets %}
+                                    {{ sheets.0.period }}
+                                {% else %}
+                                    暂无
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报表列表 -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">资产负债表列表</h5>
+        </div>
+        <div class="card-body">
+            {% if sheets %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>会计期间</th>
+                            <th>生成日期</th>
+                            <th>资产总计</th>
+                            <th>负债总计</th>
+                            <th>所有者权益</th>
+                            <th>平衡状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sheet in sheets %}
+                        <tr>
+                            <td>
+                                <strong>{{ sheet.period }}</strong>
+                                {% if sheet.is_final %}
+                                <span class="badge bg-success ms-2">已定稿</span>
+                                {% else %}
+                                <span class="badge bg-warning ms-2">草稿</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ sheet.report_date|date:"Y-m-d H:i" }}</td>
+                            <td class="text-end">
+                                <span class="fw-bold">¥{{ sheet.total_assets|floatformat:2 }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-danger">¥{{ sheet.total_liabilities|floatformat:2 }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-success">¥{{ sheet.total_equity|floatformat:2 }}</span>
+                            </td>
+                            <td>
+                                {% if sheet.is_balanced %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>平衡
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>不平衡
+                                    <small class="ms-1">(差额: {{ sheet.balance_diff|floatformat:2 }})</small>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'finance_app:balance_sheet_detail' period=sheet.period %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i> 查看
+                                    </a>
+                                    <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" 
+                                       data-bs-target="#exportModal{{ sheet.period }}">
+                                        <i class="fas fa-download"></i> 导出
+                                    </a>
+                                    {% if not sheet.is_final %}
+                                    <a href="#" class="btn btn-outline-warning">
+                                        <i class="fas fa-edit"></i> 编辑
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light">
+                            <td colspan="2" class="text-end"><strong>总计：</strong></td>
+                            <td class="text-end"><strong>¥{{ total_assets|default:0|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong>¥{{ total_liabilities|default:0|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong>¥{{ total_equity|default:0|floatformat:2 }}</strong></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">暂无资产负债表</h5>
+                <p class="text-muted mb-4">尚未生成任何资产负债表，点击下方按钮开始生成</p>
+                <a href="{% url 'finance_app:balance_sheet_generate' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus me-2"></i>生成第一张资产负债表
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 操作指南 -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>关于资产负债表</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-check-circle text-success me-2"></i>平衡公式</h6>
+                    <p class="small">资产 = 负债 + 所有者权益</p>
+                    <div class="alert alert-light">
+                        <small>
+                            <strong>资产：</strong>企业拥有或控制的资源<br>
+                            <strong>负债：</strong>企业对外部承担的义务<br>
+                            <strong>所有者权益：</strong>企业所有者对资产的剩余索取权
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>使用建议</h6>
+                    <ul class="small">
+                        <li>每月末生成一次资产负债表</li>
+                        <li>确保所有凭证都已审核过账</li>
+                        <li>检查平衡状态，不平衡时需调整</li>
+                        <li>定稿前请仔细核对数据</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导出模态框（示例） -->
+{% for sheet in sheets %}
+<div class="modal fade" id="exportModal{{ sheet.period }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导出 {{ sheet.period }} 资产负债表</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>选择导出格式：</p>
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-excel text-success me-2"></i>Excel 格式 (.xlsx)
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-pdf text-danger me-2"></i>PDF 格式 (.pdf)
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-csv text-primary me-2"></i>CSV 格式 (.csv)
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 初始化表格排序
+    $('table').DataTable({
+        "pageLength": 10,
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese.json"
+        },
+        "order": [[0, 'desc']] // 按期间降序排列
+    });
+    
+    // 初始化工具提示
+    $('[data-bs-toggle="tooltip"]').tooltip();
+});
+</script>
+{% endblock %}

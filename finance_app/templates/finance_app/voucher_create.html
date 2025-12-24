@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" id="voucherForm">
+                {% csrf_token %}
+                
+                <!-- 凭证基本信息 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>凭证日期</label>
+                            {{ voucher_form.voucher_date }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label>凭证摘要</label>
+                    {{ voucher_form.description }}
+                </div>
+
+                <!-- 分录表格 -->
+                <h5 class="mb-3">分录明细</h5>
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered" id="entriesTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="25%">会计科目</th>
+                                <th width="10%">方向</th>
+                                <th width="15%">金额</th>
+                                <th width="20%">摘要</th>
+                                <th width="15%">客户</th>
+                                <th width="15%">供应商</th>
+                                <th width="5%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entriesBody">
+                            {{ entry_formset.management_form }}
+                            {% for form in entry_formset %}
+                            <tr class="entry-row">
+                                <td>{{ form.account }}</td>
+                                <td>
+                                    <select name="{{ form.direction.html_name }}" class="form-control direction-select">
+                                        <option value="DEBIT" {% if form.direction.value == 'DEBIT' %}selected{% endif %}>借方</option>
+                                        <option value="CREDIT" {% if form.direction.value == 'CREDIT' %}selected{% endif %}>贷方</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="{{ form.amount.html_name }}"
+                                           value="{% if form.amount.value %}{{ form.amount.value }}{% endif %}"
+                                           class="form-control amount-input" step="0.01" min="0">
+                                </td>
+                                <td>
+                                    <input type="text" name="{{ form.description.html_name }}"
+                                           value="{% if form.description.value %}{{ form.description.value }}{% endif %}"
+                                           class="form-control description-input" placeholder="摘要">
+                                </td>
+                                <td>
+                                    <input type="text" name="{{ form.customer.html_name }}"
+                                           value="{% if form.customer.value %}{{ form.customer.value }}{% endif %}"
+                                           class="form-control customer-input" placeholder="客户名称">
+                                </td>
+                                <td>
+                                    <input type="text" name="{{ form.supplier.html_name }}"
+                                           value="{% if form.supplier.value %}{{ form.supplier.value }}{% endif %}"
+                                           class="form-control supplier-input" placeholder="供应商名称">
+                                </td>
+                                <td>
+                                    {% if not forloop.first or entry_formset.total_form_count > 2 %}
+                                    <button type="button" class="btn btn-sm btn-danger remove-row">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if form.errors %}
+                            <tr>
+                                <td colspan="7" class="bg-danger text-white">
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            {{ field.label }}: {{ error }}
+                                        {% endfor %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-right"><strong>合计：</strong></td>
+                                <td><span id="totalDebit" class="text-danger font-weight-bold">0.00</span></td>
+                                <td><span id="totalCredit" class="text-primary font-weight-bold">0.00</span></td>
+                                <td colspan="3">
+                                    <span id="balanceStatus" class="badge badge-danger">不平衡</span>
+                                    <span id="balanceDiff" class="ml-2"></span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 按钮 -->
+                <div class="d-flex justify-content-between">
+                    <button type="button" id="addEntry" class="btn btn-success">
+                        <i class="fas fa-plus"></i> 添加分录行
+                    </button>
+
+                    <div>
+                        <button type="submit" name="save_draft" class="btn btn-secondary">
+                            保存草稿
+                        </button>
+                        <button type="submit" name="save_submit" class="btn btn-primary ml-2">
+                            保存并提交
+                        </button>
+                        <a href="{% url 'finance_app:voucher_list' %}" class="btn btn-light ml-2">
+                            取消
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .balance-good {
+        color: green;
+        font-weight: bold;
+    }
+    .balance-bad {
+        color: red;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 先加载jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // 初始化Select2（只对科目选择框）
+    $('select[name*="account"]').select2();
+
+    // 动态添加分录行
+    let entryCount = {{ entry_formset.total_form_count }};
+
+    function getNewRowHtml(index) {
+        return `
+        <tr class="entry-row">
+            <td>
+                <select name="entries-${index}-account" class="form-control account-select">
+                    <option value="">-- 选择科目 --</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.pk }}">{{ account.account_code }} - {{ account.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select name="entries-${index}-direction" class="form-control direction-select">
+                    <option value="DEBIT">借方</option>
+                    <option value="CREDIT">贷方</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" name="entries-${index}-amount" class="form-control amount-input" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="text" name="entries-${index}-description" class="form-control description-input" placeholder="摘要">
+            </td>
+            <td>
+                <input type="text" name="entries-${index}-customer" class="form-control customer-input" placeholder="客户名称">
+            </td>
+            <td>
+                <input type="text" name="entries-${index}-supplier" class="form-control supplier-input" placeholder="供应商名称">
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger remove-row">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    }
+
+    $('#addEntry').click(function() {
+        const newRow = getNewRowHtml(entryCount);
+        $('#entriesBody').append(newRow);
+        $('#id_entries-TOTAL_FORMS').val(++entryCount);
+
+        // 重新初始化Select2
+        $('select[name*="account"]').select2();
+
+        // 重新绑定事件
+        bindRowEvents();
+    });
+
+    // 删除分录行
+    function bindRowEvents() {
+        $('.remove-row').off('click').on('click', function() {
+            if ($('.entry-row').length > 2) {
+                $(this).closest('tr').remove();
+                entryCount--;
+                $('#id_entries-TOTAL_FORMS').val(entryCount);
+                calculateTotals();
+            } else {
+                alert('至少需要两行分录（一借一贷）');
+            }
+        });
+
+        // 金额变化时重新计算
+        $('.amount-input').off('input').on('input', calculateTotals);
+        $('.direction-select').off('change').on('change', calculateTotals);
+    }
+
+    // 计算借贷总额
+    function calculateTotals() {
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        $('.entry-row').each(function() {
+            const amountInput = $(this).find('.amount-input');
+            const directionSelect = $(this).find('.direction-select');
+
+            const amount = parseFloat(amountInput.val()) || 0;
+            const direction = directionSelect.val();
+
+            if (direction === 'DEBIT') {
+                totalDebit += amount;
+            } else if (direction === 'CREDIT') {
+                totalCredit += amount;
+            }
+        });
+
+        $('#totalDebit').text(totalDebit.toFixed(2));
+        $('#totalCredit').text(totalCredit.toFixed(2));
+
+        const diff = Math.abs(totalDebit - totalCredit);
+        const isBalanced = totalDebit === totalCredit;
+
+        $('#balanceDiff').text(`差额：${diff.toFixed(2)}`);
+
+        if (isBalanced) {
+            $('#balanceStatus')
+                .removeClass('badge-danger')
+                .addClass('badge-success')
+                .text('已平衡');
+            $('#balanceDiff').hide();
+        } else {
+            $('#balanceStatus')
+                .removeClass('badge-success')
+                .addClass('badge-danger')
+                .text('不平衡');
+            $('#balanceDiff').show();
+        }
+    }
+
+    // 表单提交前验证
+    $('#voucherForm').submit(function(e) {
+        calculateTotals();
+
+        const totalDebit = parseFloat($('#totalDebit').text()) || 0;
+        const totalCredit = parseFloat($('#totalCredit').text()) || 0;
+
+        if (totalDebit === 0 && totalCredit === 0) {
+            alert('请至少输入一笔分录');
+            e.preventDefault();
+            return false;
+        }
+
+        if (totalDebit !== totalCredit) {
+            const confirmSave = confirm(`借贷不平衡！\n借方：${totalDebit.toFixed(2)}\n贷方：${totalCredit.toFixed(2)}\n差额：${Math.abs(totalDebit-totalCredit).toFixed(2)}\n\n是否仍要保存为草稿？`);
+            if (!confirmSave) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    
+    // 初始绑定事件
+    bindRowEvents();
+    calculateTotals();
+});
+</script>
+{% endblock %}

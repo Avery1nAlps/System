@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="lead">选择会计期间生成资产负债表</p>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>提示：</strong>系统将根据所选期间内的会计凭证数据自动计算生成资产负债表。
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'finance_app:balance_sheet_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>返回列表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 生成表单 -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">选择期间</h5>
+                </div>
+                <div class="card-body">
+                    {% if periods %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="period" class="form-label">
+                                <strong>选择会计期间</strong>
+                                <span class="text-muted">（格式：YYYYMM，如：202401）</span>
+                            </label>
+                            
+                            <div class="row">
+                                {% for period in periods %}
+                                <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                    <div class="form-check card period-card">
+                                        <input class="form-check-input" type="radio" 
+                                               name="period" id="period{{ forloop.counter }}" 
+                                               value="{{ period }}" required>
+                                        <label class="form-check-label card-body" for="period{{ forloop.counter }}">
+                                            <div class="text-center">
+                                                <h5 class="mb-1">{{ period }}</h5>
+                                                <small class="text-muted">
+                                                    {{ period|slice:"0:4" }}年{{ period|slice:"4:6" }}月
+                                                </small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- 手动输入期间 -->
+                        <div class="mb-4">
+                            <label for="customPeriod" class="form-label">
+                                <strong>或手动输入期间</strong>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">期间</span>
+                                <input type="text" class="form-control" id="customPeriod" 
+                                       name="custom_period" placeholder="202401"
+                                       pattern="\d{6}" title="请输入6位数字，如：202401">
+                                <button type="button" class="btn btn-outline-secondary" 
+                                        onclick="useCustomPeriod()">
+                                    使用此期间
+                                </button>
+                            </div>
+                            <div class="form-text">请输入6位数字格式的期间，如：202401 表示2024年1月</div>
+                        </div>
+
+                        <!-- 生成选项 -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">生成选项</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="forceRegenerate" name="force">
+                                    <label class="form-check-label" for="forceRegenerate">
+                                        <strong>强制重新生成</strong>
+                                        <span class="text-muted">（如果该期间已存在报表，将覆盖原有报表）</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="autoCalculate" name="auto_calculate" checked>
+                                    <label class="form-check-label" for="autoCalculate">
+                                        <strong>自动计算数据</strong>
+                                        <span class="text-muted">（根据凭证数据自动计算各项金额）</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-redo me-1"></i>重置
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-calculator me-1"></i>生成资产负债表
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">暂无可用期间</h5>
+                        <p class="text-muted mb-4">系统中没有找到可用的会计凭证数据，请先录入凭证。</p>
+                        <a href="{% url 'finance_app:voucher_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>去录入凭证
+                        </a>
+                        <a href="{% url 'finance_app:voucher_list' %}" class="btn btn-outline-primary ms-2">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>查看已有凭证
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏：帮助信息 -->
+        <div class="col-md-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>帮助信息</h5>
+                </div>
+                <div class="card-body">
+                    <h6>如何选择期间？</h6>
+                    <ul class="small mb-3">
+                        <li>系统自动从已有凭证中提取可用的会计期间</li>
+                        <li>期间格式为6位数字：YYYYMM</li>
+                        <li>示例：202401 表示2024年1月</li>
+                    </ul>
+
+                    <h6>数据来源</h6>
+                    <p class="small">资产负债表数据来源于：</p>
+                    <ol class="small">
+                        <li>会计科目表（Account）的科目分类</li>
+                        <li>总分类账（GeneralLedger）的科目余额</li>
+                        <li>所选期间内的所有会计凭证</li>
+                    </ol>
+
+                    <h6>计算规则</h6>
+                    <div class="alert alert-light small">
+                        <strong>资产 = 负债 + 所有者权益</strong><br>
+                        <ul class="mb-0 mt-2">
+                            <li>资产类：借方余额汇总</li>
+                            <li>负债类：贷方余额汇总</li>
+                            <li>权益类：贷方余额汇总</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning small">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>注意：</strong>生成报表前请确保：
+                        <ul class="mb-0 mt-2">
+                            <li>所有凭证已审核过账</li>
+                            <li>期间内凭证借贷平衡</li>
+                            <li>科目余额计算正确</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已有报表提醒 -->
+    {% if existing_balance_sheets %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>已存在的资产负债表</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">以下期间已经存在资产负债表，如需重新生成请勾选"强制重新生成"选项：</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for period in existing_balance_sheets %}
+                        <a href="{% url 'finance_app:balance_sheet_detail' period=period %}" 
+                           class="btn btn-sm btn-outline-warning">
+                            {{ period }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+// 使用自定义期间
+function useCustomPeriod() {
+    const customPeriod = document.getElementById('customPeriod').value;
+    if (!customPeriod) {
+        alert('请输入期间');
+        return;
+    }
+    
+    // 验证格式：6位数字
+    const periodPattern = /^\d{6}$/;
+    if (!periodPattern.test(customPeriod)) {
+        alert('期间格式不正确，请输入6位数字（如：202401）');
+        return;
+    }
+    
+    // 选择对应的单选按钮
+    const radioId = 'period_custom';
+    let radio = document.getElementById(radioId);
+    if (!radio) {
+        // 创建新的单选按钮
+        const container = document.querySelector('.row');
+        const newCol = document.createElement('div');
+        newCol.className = 'col-md-3 col-sm-4 col-6 mb-3';
+        newCol.innerHTML = `
+            <div class="form-check card period-card border-primary">
+                <input class="form-check-input" type="radio" 
+                       name="period" id="${radioId}" 
+                       value="${customPeriod}" checked required>
+                <label class="form-check-label card-body" for="${radioId}">
+                    <div class="text-center">
+                        <h5 class="mb-1 text-primary">${customPeriod}</h5>
+                        <small class="text-muted">
+                            ${customPeriod.slice(0,4)}年${customPeriod.slice(4,6)}月
+                        </small>
+                        <br>
+                        <small class="text-primary">（自定义期间）</small>
+                    </div>
+                </label>
+            </div>
+        `;
+        container.appendChild(newCol);
+        radio = document.getElementById(radioId);
+    }
+    
+    radio.checked = true;
+    radio.value = customPeriod;
+    
+    // 滚动到该选项
+    radio.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// 表单提交确认
+document.querySelector('form').addEventListener('submit', function(e) {
+    const selectedPeriod = document.querySelector('input[name="period"]:checked');
+    if (!selectedPeriod) {
+        e.preventDefault();
+        alert('请选择会计期间');
+        return;
+    }
+    
+    const forceRegenerate = document.getElementById('forceRegenerate').checked;
+    if (forceRegenerate) {
+        if (!confirm(`确定要重新生成 ${selectedPeriod.value} 期间的资产负债表吗？这将覆盖原有数据。`)) {
+            e.preventDefault();
+        }
+    }
+});
+
+// 卡片点击效果
+document.querySelectorAll('.period-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            // 添加选中样式
+            document.querySelectorAll('.period-card').forEach(c => {
+                c.classList.remove('border-primary', 'bg-light');
+            });
+            this.classList.add('border-primary', 'bg-light');
+        }
+    });
+});
+</script>
+
+<style>
+.period-card {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #dee2e6;
+}
+.period-card:hover {
+    border-color: #0d6efd;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.period-card .form-check-input {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+.period-card .form-check-label {
+    width: 100%;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+{% endblock %}

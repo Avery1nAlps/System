@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 返回按钮 -->
+    <div class="mb-3">
+        <a href="{% url 'finance_app:voucher_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">{{ title }}</h4>
+        </div>
+        <div class="card-body">
+            <!-- 凭证基本信息 -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <h6><strong>凭证编号：</strong></h6>
+                    <p class="h5">{{ voucher.voucher_id }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h6><strong>凭证日期：</strong></h6>
+                    <p>{{ voucher.voucher_date }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h6><strong>状态：</strong></h6>
+                    <p>
+                        {% if voucher.status == 'DRAFT' %}
+                        <span class="badge bg-secondary">草稿</span>
+                        {% elif voucher.status == 'SUBMITTED' %}
+                        <span class="badge bg-warning">已提交</span>
+                        {% elif voucher.status == 'AUDITED' %}
+                        <span class="badge bg-success">已审核</span>
+                        {% elif voucher.status == 'POSTED' %}
+                        <span class="badge bg-primary">已过账</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h6><strong>制单人：</strong></h6>
+                    <p>{{ voucher.created_by.username }}</p>
+                </div>
+            </div>
+            
+            <!-- 凭证摘要 -->
+            <div class="mb-4">
+                <h6><strong>凭证摘要：</strong></h6>
+                <p class="border p-3 bg-light">{{ voucher.description }}</p>
+            </div>
+            
+            <!-- 分录明细表格 -->
+            <h5 class="mb-3">分录明细</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="5%">序号</th>
+                            <th width="25%">会计科目</th>
+                            <th width="10%">方向</th>
+                            <th width="15%">金额</th>
+                            <th width="25%">摘要</th>
+                            <th width="10%">客户</th>
+                            <th width="10%">供应商</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ entry.account.account_code }} - {{ entry.account.account_name }}</td>
+                            <td>
+                                {% if entry.direction == 'DEBIT' %}
+                                <span class="text-danger">借方</span>
+                                {% else %}
+                                <span class="text-primary">贷方</span>
+                                {% endif %}
+                            </td>
+                            <td class="{% if entry.direction == 'DEBIT' %}text-danger{% else %}text-primary{% endif %}">
+                                {{ entry.amount }}
+                            </td>
+                            <td>{{ entry.description|default:"-" }}</td>
+                            <td>{{ entry.customer|default:"-" }}</td>
+                            <td>{{ entry.supplier|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">暂无分录</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td colspan="2" class="text-right"><strong>合计：</strong></td>
+                            <td><strong>借方</strong></td>
+                            <td class="text-danger"><strong>{{ voucher.total_debit }}</strong></td>
+                            <td><strong>贷方</strong></td>
+                            <td class="text-primary" colspan="2"><strong>{{ voucher.total_credit }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                {% if voucher.total_debit == voucher.total_credit %}
+                                <span class="badge bg-success">借贷平衡 ✓</span>
+                                {% else %}
+                                <span class="badge bg-danger">借贷不平衡 ✗</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <!-- 凭证操作按钮 -->
+            <div class="d-flex justify-content-between">
+                <div>
+                    {% if voucher.status == 'DRAFT' %}
+                    <a href="{% url 'finance_app:voucher_edit' voucher.voucher_id %}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> 编辑凭证
+                    </a>
+                    <form method="post" action="{% url 'finance_app:voucher_submit' voucher.voucher_id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary ml-2">
+                            <i class="fas fa-paper-plane"></i> 提交审核
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <span class="text-muted mr-3">
+                        创建时间：{{ voucher.create_time|date:"Y-m-d H:i" }}
+                    </span>
+                    {% if voucher.update_time %}
+                    <span class="text-muted">
+                        更新时间：{{ voucher.update_time|date:"Y-m-d H:i" }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">财务报表系统提供资产负债表、利润表等标准财务报表的生成和查看功能。</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        报表数据基于会计凭证自动计算生成，确保数据准确性。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能卡片 -->
+    <div class="row mb-4">
+        <!-- 资产负债表 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>资产负债表</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">反映企业在某一特定日期的财务状况，显示资产、负债和所有者权益的构成。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary">资产 = 负债 + 所有者权益</span>
+                        </div>
+                        <div>
+                            <a href="{% url 'finance_app:balance_sheet_list' %}" class="btn btn-success">
+                                <i class="fas fa-list me-1"></i>查看列表
+                            </a>
+                            <a href="{% url 'finance_app:balance_sheet_generate' %}" class="btn btn-outline-success">
+                                <i class="fas fa-plus me-1"></i>生成报表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        <i class="fas fa-history me-1"></i>
+                        {% if balance_sheets %}
+                            最近更新：{{ balance_sheets.0.period }}
+                        {% else %}
+                            暂无报表
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 利润表 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>利润表</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">反映企业在一定会计期间的经营成果，显示收入、费用和利润的构成。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary">利润 = 收入 - 费用</span>
+                        </div>
+                        <div>
+                            <a href="{% url 'finance_app:income_statement_list' %}" class="btn btn-warning text-dark">
+                                <i class="fas fa-list me-1"></i>查看列表
+                            </a>
+                            <a href="{% url 'finance_app:income_statement_generate' %}" class="btn btn-outline-warning text-dark">
+                                <i class="fas fa-plus me-1"></i>生成报表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        <i class="fas fa-history me-1"></i>
+                        {% if income_statements %}
+                            最近更新：{{ income_statements.0.period }}
+                        {% else %}
+                            暂无报表
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近期间 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>可用会计期间</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_periods %}
+                    <div class="row">
+                        {% for period_item in recent_periods %}
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ period_item.period }}</h5>
+                                    <p class="card-text">
+                                        {% if period_item.period|slice:"-2:" == "01" %}
+                                            年度报表
+                                        {% else %}
+                                            月度报表
+                                        {% endif %}
+                                    </p>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'finance_app:balance_sheet_detail' period=period_item.period %}" 
+                                           class="btn btn-sm btn-outline-success {% if period_item.period not in existing_balance_sheets %}disabled{% endif %}"
+                                           {% if period_item.period not in existing_balance_sheets %}title="尚未生成资产负债表"{% endif %}>
+                                            资产表
+                                        </a>
+                                        <a href="{% url 'finance_app:income_statement_detail' period=period_item.period %}" 
+                                           class="btn btn-sm btn-outline-warning {% if period_item.period not in existing_income_statements %}disabled{% endif %}"
+                                           {% if period_item.period not in existing_income_statements %}title="尚未生成利润表"{% endif %}>
+                                            利润表
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        暂无可用会计期间数据。请先录入会计凭证。
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作指南 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>使用说明</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="display-4 text-primary">1</div>
+                                <h6>录入凭证</h6>
+                                <p class="small">在"做分录"功能中录入完整的会计凭证</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="display-4 text-success">2</div>
+                                <h6>生成报表</h6>
+                                <p class="small">选择会计期间，系统自动计算生成财务报表</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="display-4 text-info">3</div>
+                                <h6>查看分析</h6>
+                                <p class="small">查看报表详情，支持导出Excel和图表分析</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 初始化工具提示
+    $('[title]').tooltip();
+    
+    // 自动刷新功能（可选）
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5分钟自动刷新
+});
+</script>
+{% endblock %}

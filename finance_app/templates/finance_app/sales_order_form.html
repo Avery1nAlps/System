@@ -1,0 +1,387 @@
+<!-- finance_app/templates/finance_app/sales_order_form.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>新建销售订单</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: normal;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .form-control[readonly] {
+            background-color: #f8f9fa;
+            color: #666;
+        }
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        .row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .col {
+            flex: 1;
+        }
+        .messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .info-note {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .info-note i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        @media (max-width: 768px) {
+            .row {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 返回链接 -->
+        <a href="{% url 'finance_app:sales_order_list' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i>返回销售订单列表
+        </a>
+
+        <!-- 页面头部 -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-store me-2"></i>
+                新建销售订单
+            </h1>
+            <div>
+                <a href="{% url 'finance_app:sales_order_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-list me-1"></i>查看订单列表
+                </a>
+            </div>
+        </div>
+
+        <!-- 提示信息 -->
+        <div class="info-note">
+            <i class="fas fa-info-circle"></i>
+            请填写销售订单信息，带 <span style="color: #e74c3c;">*</span> 的字段为必填项
+        </div>
+
+        <!-- 错误/成功消息 -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle me-2"></i>
+                {% else %}
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- 订单表单 -->
+        <div class="card">
+            <div class="card-header">销售订单信息</div>
+            <div class="card-body">
+                <form method="post" id="salesOrderForm">
+                    {% csrf_token %}
+
+                    <!-- 客户信息 -->
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label required">客户</label>
+                                <input type="text" name="customer" class="form-control">
+                                    list="customerList" placeholder="输入或选择客户" required>
+                                <datalist id="customerList">
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.name }}">{{ customer.name }}</option>
+                                    {% endfor %}
+                                </datalist>
+                                <small class="text-muted">支持输入新的客户名称，或从下拉列表中选择已有客户</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label required">订单日期</label>
+                                <input type="date" name="order_date" class="form-control"
+                                       value="{{ today }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品信息 -->
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label required">商品名称</label>
+                                <input type="text" name="product_name" class="form-control"
+                                       placeholder="请输入销售的商品名称" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label">交货日期</label>
+                                <input type="date" name="delivery_date" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数量价格 -->
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label required">数量</label>
+                                <input type="number" name="quantity" class="form-control"
+                                       step="0.01" min="0" value="1" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label required">单价 (¥)</label>
+                                <input type="number" name="unit_price" class="form-control"
+                                       step="0.01" min="0" value="0" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label">订单总额 (¥)</label>
+                                <input type="text" class="form-control" id="totalAmount"
+                                       value="0.00" readonly style="background-color: #f8f9fa;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 运输信息 -->
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label class="form-label">运输方式</label>
+                                <select name="shipping_method" class="form-control">
+                                    <option value="">请选择运输方式</option>
+                                    <option value="快递">快递</option>
+                                    <option value="物流">物流</option>
+                                    <option value="自提">自提</option>
+                                    <option value="上门送货">上门送货</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 送货地址 -->
+                    <div class="form-group">
+                        <label class="form-label">送货地址</label>
+                        <textarea name="shipping_address" class="form-control" rows="3"
+                                  placeholder="请输入详细的送货地址（选填）"></textarea>
+                    </div>
+
+                    <!-- 备注 -->
+                    <div class="form-group">
+                        <label class="form-label">备注信息</label>
+                        <textarea name="notes" class="form-control" rows="3"
+                                  placeholder="可输入订单备注信息（选填）"></textarea>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="action-buttons">
+                        <a href="{% url 'finance_app:sales_order_list' %}" class="btn btn-secondary">
+                            取消
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>保存销售订单
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自动计算总额
+        document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.querySelector('input[name="quantity"]');
+    const priceInput = document.querySelector('input[name="unit_price"]');
+    const totalInput = document.getElementById('totalAmount');
+
+    function calculateTotal() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = quantity * price;
+        totalInput.value = total.toFixed(2);
+    }
+
+    quantityInput.addEventListener('input', calculateTotal);
+    priceInput.addEventListener('input', calculateTotal);
+
+    // 初始计算
+    calculateTotal();
+
+    // 表单提交验证
+    const form = document.getElementById('salesOrderForm');
+    form.addEventListener('submit', function(e) {
+        const customerInput = document.querySelector('input[name="customer"]'); // 改为 input
+        const productName = document.querySelector('input[name="product_name"]');
+        const quantity = document.querySelector('input[name="quantity"]');
+        const unitPrice = document.querySelector('input[name="unit_price"]');
+
+        // 验证客户输入（文本输入）
+        if (!customerInput.value || !customerInput.value.trim()) {
+            alert('请输入客户名称');
+            e.preventDefault();
+            return;
+        }
+
+        if (!productName.value.trim()) {
+            alert('请输入商品名称');
+            e.preventDefault();
+            return;
+        }
+
+        if (!quantity.value || parseFloat(quantity.value) <= 0) {
+            alert('请输入有效的数量');
+            e.preventDefault();
+            return;
+        }
+
+        if (!unitPrice.value || parseFloat(unitPrice.value) < 0) {
+            alert('请输入有效的单价');
+            e.preventDefault();
+            return;
+        }
+    });
+});
+    </script>
+</body>
+</html>
